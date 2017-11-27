@@ -75,6 +75,14 @@ class Graph(object):
         so don't forget to call `self.add` on each of the variables.
         """
         "*** YOUR CODE HERE ***"
+        self.counter = 0
+        self.node_output = {} # {node1: output}
+        self.nodes = []  # [node1, node2, ...]
+        self.node_gradient = {} # {node1: gradient}
+
+        for variable in variables:
+            self.add(variable)
+        # node_inputs = {} # {node1 : [input1, input2]}
 
     def get_nodes(self):
         """
@@ -85,6 +93,8 @@ class Graph(object):
         Returns: a list of nodes
         """
         "*** YOUR CODE HERE ***"
+        return self.nodes
+
 
     def get_inputs(self, node):
         """
@@ -96,6 +106,10 @@ class Graph(object):
         Hint: every node has a `.get_parents()` method
         """
         "*** YOUR CODE HERE ***"
+        lst = []
+        for parent in node.get_parents():
+            lst.append(np.array(parent))
+        return lst
 
     def get_output(self, node):
         """
@@ -105,6 +119,9 @@ class Graph(object):
         Returns: a numpy array or a scalar
         """
         "*** YOUR CODE HERE ***"
+        # inputs = node.get_parents()
+        output = self.node_output[node]
+        return output
 
     def get_gradient(self, node):
         """
@@ -134,6 +151,17 @@ class Graph(object):
         accumulator for the node, with correct shape.
         """
         "*** YOUR CODE HERE ***"
+        # self.counter += 1
+        # lst = [self.counter, node]
+        self.nodes.append(node)
+
+        inputs = node.get_parents()
+        output = node.forward(inputs)
+        self.node_output[node] = output
+        gradient = np.zeros_like(output)
+        self.node_gradient[node] = gradient
+
+
 
     def backprop(self):
         """
@@ -259,22 +287,12 @@ class Add(FunctionNode):
     @staticmethod
     def forward(inputs):
         "*** YOUR CODE HERE ***"
-        # >> > x = np.array([2, 3, 1, 0])
-
         s = np.sum([inputs[0], inputs[1]], axis=0)
-        # >> > np.sum([[0, 1], [0, 5]], axis=0)
-
-        # return np.array([s])
-        # print s
         return s
 
     @staticmethod
     def backward(inputs, gradient):
         "*** YOUR CODE HERE ***"
-        # print inputs
-        # print gradient
-        # s = np.sum([inputs[0], inputs[1]], axis=0)
-
         return [gradient, gradient]
 
 class MatrixMultiply(FunctionNode):
@@ -318,15 +336,12 @@ class MatrixVectorAdd(FunctionNode):
         "*** YOUR CODE HERE ***"
 
         s = inputs[0] + inputs[1]
-        # s = np.sum([inputs[0], inputs[1]], axis=0)
-
         return s
 
     @staticmethod
     def backward(inputs, gradient):
         "*** YOUR CODE HERE ***"
 
-        s = inputs[0] + inputs[1]
         k = np.sum(gradient, axis=0)
 
         return [gradient, k]
@@ -384,8 +399,6 @@ class SquareLoss(FunctionNode):
         "*** YOUR CODE HERE ***"
         x = inputs[0]
         y = inputs[1]
-        x_size = x.shape
-        y_size = y.shape
         N = x.shape[0] * x.shape[1]
         matrix1 = x - y
         matrix2 = y - x
