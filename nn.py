@@ -345,27 +345,19 @@ class ReLU(FunctionNode):
     def forward(inputs):
         "*** YOUR CODE HERE ***"
         kk = inputs[0].copy()
-        print "inputs"
-        print inputs
-        print "kk => inputs[0]"
-        print kk
         kk[kk < 0] = 0
-        print "modified kk"
-        print kk
         return (np.array(kk,))
 
 
     @staticmethod
     def backward(inputs, gradient):
         "*** YOUR CODE HERE ***"
-        print "back inputs"
-        print input
-        print "gra"
-        print gradient
         kk = inputs[0].copy()
         kk[kk < 0] = 0
+        kk2 = kk.copy()
+        kk2[kk2 > 0] = 1
+        return [kk2 * gradient]
 
-        return [kk * gradient]
 
 class SquareLoss(FunctionNode):
     """
@@ -382,10 +374,24 @@ class SquareLoss(FunctionNode):
     @staticmethod
     def forward(inputs):
         "*** YOUR CODE HERE ***"
+        diff = inputs[0] - inputs[1]
+        multi = diff * diff
+        m = np.multiply(multi, 0.5)
+        return m.mean()
 
     @staticmethod
     def backward(inputs, gradient):
         "*** YOUR CODE HERE ***"
+        x = inputs[0]
+        y = inputs[1]
+        x_size = x.shape
+        y_size = y.shape
+        N = x.shape[0] * x.shape[1]
+        matrix1 = x - y
+        matrix2 = y - x
+        print np.sum(matrix1) * gradient / N
+        print np.sum(matrix2) * gradient / N
+        return [matrix1 * gradient / N, matrix2 * gradient / N]
 
 class SoftmaxLoss(FunctionNode):
     """
