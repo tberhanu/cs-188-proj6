@@ -75,14 +75,14 @@ class Graph(object):
         so don't forget to call `self.add` on each of the variables.
         """
         "*** YOUR CODE HERE ***"
-        self.counter = 0
-        self.node_output = {} # {node1: output}
         self.nodes = []  # [node1, node2, ...]
+        self.node_output = {} # {node1: output}
         self.node_gradient = {} # {node1: gradient}
+
+        self.backprop_called = False
 
         for variable in variables:
             self.add(variable)
-        # node_inputs = {} # {node1 : [input1, input2]}
 
     def get_nodes(self):
         """
@@ -95,7 +95,6 @@ class Graph(object):
         "*** YOUR CODE HERE ***"
         return self.nodes
 
-
     def get_inputs(self, node):
         """
         Retrieves the inputs to a node in the graph. Assume the `node` has
@@ -106,10 +105,19 @@ class Graph(object):
         Hint: every node has a `.get_parents()` method
         """
         "*** YOUR CODE HERE ***"
-        lst = []
-        for parent in node.get_parents():
-            lst.append(np.array(parent))
-        return lst
+        if len(node.get_parents()) == 0:
+            return []
+        else:
+            lst = node.get_parents()
+            parent1 = lst[0]
+            parent2 = lst[1]
+            input1 = self.get_output(parent1)
+            input2 = self.get_output((parent2))
+            # return [lst[0].data, lst[1].data]
+            return np.array([input1, input2])
+        # for parent in node.get_parents():
+        #     lst.append(np.array(parent))
+        # return lst
 
     def get_output(self, node):
         """
@@ -119,7 +127,6 @@ class Graph(object):
         Returns: a numpy array or a scalar
         """
         "*** YOUR CODE HERE ***"
-        # inputs = node.get_parents()
         output = self.node_output[node]
         return output
 
@@ -137,6 +144,14 @@ class Graph(object):
         Returns: a numpy array
         """
         "*** YOUR CODE HERE ***"
+        if self.backprop_called:
+            loss_node = self.get_nodes()[-1]
+
+            return np.array(self.node_gradient[node]) 
+        else:
+            output = self.node_output[node]
+            return np.zeros_like(output)
+
 
     def add(self, node):
         """
@@ -151,17 +166,25 @@ class Graph(object):
         accumulator for the node, with correct shape.
         """
         "*** YOUR CODE HERE ***"
-        # self.counter += 1
-        # lst = [self.counter, node]
+
         self.nodes.append(node)
 
-        inputs = node.get_parents()
-        output = node.forward(inputs)
-        self.node_output[node] = output
-        gradient = np.zeros_like(output)
-        self.node_gradient[node] = gradient
+        parent_nodes = node.get_parents()
+        if len(parent_nodes) == 0:
+            output = node.forward([])
+            self.node_output[node] = output
+            gradient = np.zeros_like(output)
+            self.node_gradient[node] = gradient
 
+        else:
 
+            a = self.node_output[parent_nodes[0]]
+            b = self.node_output[parent_nodes[1]]
+            output = node.forward([a, b])
+
+            self.node_output[node] = output
+            gradient = np.zeros_like(output)
+            self.node_gradient[node] = gradient
 
     def backprop(self):
         """
@@ -179,6 +202,19 @@ class Graph(object):
         assert np.asarray(self.get_output(loss_node)).ndim == 0
 
         "*** YOUR CODE HERE ***"
+        self.backprop_called = True
+        is_loss_node = True
+        prev_gradient = 1.0
+        for node in reversed(self.get_nodes()):
+            if is_loss_node:
+                self.node_gradient[node] = 1.0
+                # prev_gradient = 1.0
+                is_loss_node = False
+            else:
+                inputs = self.get_inputs(node)
+                gradient = node.backward(inputs, prev_gradient)
+                self.node_gradient[node] = gradient
+                prev_gradient = gradient
 
     def step(self, step_size):
         """
@@ -189,6 +225,10 @@ class Graph(object):
         Hint: each Variable has a `.data` attribute
         """
         "*** YOUR CODE HERE ***"
+        for variable in self.variables:
+            variable.data = variable.data - step_size * self.node_gradient[variable]
+
+
 
 class DataNode(object):
     """
