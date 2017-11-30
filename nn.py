@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def main():
     """
     This is sample code for linear regression, which demonstrates how to use the
@@ -20,7 +21,7 @@ def main():
     # Let's construct a simple model to approximate a function from 2D
     # points to numbers, f(x) = x_0 * m_0 + x_1 * m_1 + b
     # Here m and b are variables (trainable parameters):
-    m = Variable(2,1)
+    m = Variable(2, 1)
     b = Variable(1)
 
     # We train our network using batch gradient descent on our data
@@ -38,11 +39,12 @@ def main():
         graph.step(0.01)
 
     # After training, we should have recovered m=[[7],[8]] and b=[3]
-    print("Final values are: {}".format([m.data[0,0], m.data[1,0], b.data[0]]))
-    assert np.isclose(m.data[0,0], 7)
-    assert np.isclose(m.data[1,0], 8)
+    print("Final values are: {}".format([m.data[0, 0], m.data[1, 0], b.data[0]]))
+    assert np.isclose(m.data[0, 0], 7)
+    assert np.isclose(m.data[1, 0], 8)
     assert np.isclose(b.data[0], 3)
     print("Success!")
+
 
 class Graph(object):
     """
@@ -75,13 +77,14 @@ class Graph(object):
         so don't forget to call `self.add` on each of the variables.
         """
         "*** YOUR CODE HERE ***"
-        self.nodes = []  # [node1, node2, ...]
-        self.node_output = {} # {node1: output}
-        self.node_gradient = {} # {node1: gradient}
-
         self.backprop_called = False
 
-        for variable in variables:
+        self.nodes = []  # [node1, node2, ...]
+        self.index_output = {}  # {indexOfNode1: outputOfNode1} :index = 0 means LossNode
+        self.index_gradient = {}  # {indexOnode1: gradientOfNode1} :gradient at index 0 is 1.0
+
+        self.variables = variables  # since we do the update for each Variable node
+        for variable in self.variables:
             self.add(variable)
 
     def get_nodes(self):
@@ -107,17 +110,15 @@ class Graph(object):
         "*** YOUR CODE HERE ***"
         if len(node.get_parents()) == 0:
             return []
+
         else:
             lst = node.get_parents()
             parent1 = lst[0]
             parent2 = lst[1]
             input1 = self.get_output(parent1)
-            input2 = self.get_output((parent2))
-            # return [lst[0].data, lst[1].data]
+            input2 = self.get_output(parent2)
             return np.array([input1, input2])
-        # for parent in node.get_parents():
-        #     lst.append(np.array(parent))
-        # return lst
+
 
     def get_output(self, node):
         """
@@ -127,8 +128,10 @@ class Graph(object):
         Returns: a numpy array or a scalar
         """
         "*** YOUR CODE HERE ***"
-        output = self.node_output[node]
+        index = self.get_index(node)
+        output = self.index_output[index]
         return output
+
 
     def get_gradient(self, node):
         """
@@ -144,14 +147,13 @@ class Graph(object):
         Returns: a numpy array
         """
         "*** YOUR CODE HERE ***"
+        index = self.get_index(node)
+        # if np.all(self.index_gradient[0]): # this means if the back_prop is already called,
         if self.backprop_called:
-            loss_node = self.get_nodes()[-1]
-
-            return np.array(self.node_gradient[node]) 
+            return np.array(self.index_gradient[index])
         else:
-            output = self.node_output[node]
+            output = self.index_output[index]
             return np.zeros_like(output)
-
 
     def add(self, node):
         """
@@ -166,25 +168,35 @@ class Graph(object):
         accumulator for the node, with correct shape.
         """
         "*** YOUR CODE HERE ***"
-
+        index = len(self.nodes)
         self.nodes.append(node)
 
         parent_nodes = node.get_parents()
         if len(parent_nodes) == 0:
             output = node.forward([])
-            self.node_output[node] = output
+            self.index_output[index] = output
             gradient = np.zeros_like(output)
-            self.node_gradient[node] = gradient
+            self.index_gradient[index] = gradient
 
         else:
 
-            a = self.node_output[parent_nodes[0]]
-            b = self.node_output[parent_nodes[1]]
+            index1 = self.get_index(parent_nodes[0])
+            a = self.index_output[index1]
+            index2 = self.get_index(parent_nodes[1])
+            b = self.index_output[index2]
+
             output = node.forward([a, b])
 
-            self.node_output[node] = output
+            self.index_output[index] = output
             gradient = np.zeros_like(output)
-            self.node_gradient[node] = gradient
+            self.index_gradient[index] = gradient
+
+    def get_index(self, node):
+        index = 0
+        for n in self.nodes:
+            if np.all(n == node):
+                return index
+            index += 1
 
     def backprop(self):
         """
@@ -203,18 +215,29 @@ class Graph(object):
 
         "*** YOUR CODE HERE ***"
         self.backprop_called = True
-        is_loss_node = True
-        prev_gradient = 1.0
-        for node in reversed(self.get_nodes()):
-            if is_loss_node:
-                self.node_gradient[node] = 1.0
-                # prev_gradient = 1.0
-                is_loss_node = False
+        index = len(self.nodes) - 1 # index of the loss_node is the last one
+        self.index_gradient[index] = 1.0
+        length = len(self.variables)
+        while index > length - 1:
+            output_gradient = self.index_gradient[index]
+            node = self.nodes[index]
+            inputs = self.get_inputs(node)
+            gradient = node.backward(inputs, output_gradient)
+
+            if len(gradient) == 0:
+                self.index_gradient[index] = []
             else:
-                inputs = self.get_inputs(node)
-                gradient = node.backward(inputs, prev_gradient)
-                self.node_gradient[node] = gradient
-                prev_gradient = gradient
+                grad1 = gradient[0]
+                input1 = node.get_parents()[0]
+                index1 = self.get_index(input1)
+                self.index_gradient[index1] += grad1
+
+                grad2 = gradient[1]
+                input2 = node.get_parents()[1]
+                index2 = self.get_index(input2)
+                self.index_gradient[index2] += grad2
+
+            index -= 1
 
     def step(self, step_size):
         """
@@ -226,8 +249,8 @@ class Graph(object):
         """
         "*** YOUR CODE HERE ***"
         for variable in self.variables:
-            variable.data = variable.data - step_size * self.node_gradient[variable]
-
+            index = self.get_index(variable)
+            variable.data = variable.data - np.array(self.index_gradient[index]) * step_size
 
 
 class DataNode(object):
@@ -253,6 +276,7 @@ class DataNode(object):
         # compute in the backwards pass
         return []
 
+
 class Variable(DataNode):
     """
     A Variable stores parameters used in a neural network.
@@ -276,6 +300,7 @@ class Variable(DataNode):
         limit = np.sqrt(3.0 / np.mean(shape))
         self.data = np.random.uniform(low=-limit, high=limit, size=shape)
 
+
 class Input(DataNode):
     """
     An Input node packages a numpy array into a node in a computation graph.
@@ -292,6 +317,7 @@ class Input(DataNode):
         assert data.dtype.kind == "f", "data must have floating-point entries"
         self.data = data
         graph.add(self)
+
 
 class FunctionNode(object):
     """
@@ -314,6 +340,7 @@ class FunctionNode(object):
     def backward(inputs, gradient):
         raise NotImplementedError
 
+
 class Add(FunctionNode):
     """
     Adds two vectors or matrices, element-wise
@@ -335,6 +362,7 @@ class Add(FunctionNode):
         "*** YOUR CODE HERE ***"
         return [gradient, gradient]
 
+
 class MatrixMultiply(FunctionNode):
     """
     Represents matrix multiplication.
@@ -353,12 +381,23 @@ class MatrixMultiply(FunctionNode):
     @staticmethod
     def backward(inputs, gradient):
         "*** YOUR CODE HERE ***"
+        "*** YOUR CODE HERE ***"
         A = inputs[0]
         B = inputs[1]
-        result = [np.matmul(gradient, np.transpose(B)), np.matmul(np.transpose(A), gradient)]
+        gradient = np.asarray(gradient)
+        if (len(gradient.shape) == 1):
+            gradient = np.reshape(gradient, (gradient.shape[0], 1))
+        result = [np.dot(gradient, np.transpose(B)), np.dot(np.transpose(A), gradient)]
         return result
 
+    """
 
+        A = inputs[0]
+        B = inputs[1]
+
+        result = [np.matmul(gradient2, np.transpose(B)), np.matmul( np.transpose(A),gradient2 )]
+        return result
+"""
 
 
 class MatrixVectorAdd(FunctionNode):
@@ -386,6 +425,7 @@ class MatrixVectorAdd(FunctionNode):
 
         return [gradient, k]
 
+
 class ReLU(FunctionNode):
     """
     An element-wise Rectified Linear Unit nonlinearity: max(x, 0).
@@ -401,8 +441,7 @@ class ReLU(FunctionNode):
         "*** YOUR CODE HERE ***"
         kk = inputs[0].copy()
         kk[kk < 0] = 0
-        return (np.array(kk,))
-
+        return (np.array(kk, ))
 
     @staticmethod
     def backward(inputs, gradient):
@@ -432,6 +471,8 @@ class SquareLoss(FunctionNode):
         diff = inputs[0] - inputs[1]
         multi = diff * diff
         m = np.multiply(multi, 0.5)
+        # if m == []: # this two lines are written because I saw a run time warning
+        #     return 0
         return m.mean()
 
     @staticmethod
@@ -442,9 +483,8 @@ class SquareLoss(FunctionNode):
         N = x.shape[0] * x.shape[1]
         matrix1 = x - y
         matrix2 = y - x
-        print np.sum(matrix1) * gradient / N
-        print np.sum(matrix2) * gradient / N
         return [matrix1 * gradient / N, matrix2 * gradient / N]
+
 
 class SoftmaxLoss(FunctionNode):
     """
@@ -463,6 +503,7 @@ class SoftmaxLoss(FunctionNode):
 
     We have provided the complete implementation for your convenience.
     """
+
     @staticmethod
     def softmax(input):
         exp = np.exp(input - np.max(input, axis=1, keepdims=True))
@@ -486,6 +527,7 @@ class SoftmaxLoss(FunctionNode):
             gradient * (softmax - inputs[1]) / inputs[0].shape[0],
             gradient * (-np.log(softmax)) / inputs[0].shape[0]
         ]
+
 
 if __name__ == '__main__':
     main()

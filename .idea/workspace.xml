@@ -16,12 +16,20 @@
       <file leaf-file-name="nn.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/nn.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="252">
-              <caret line="149" column="54" lean-forward="true" selection-start-line="149" selection-start-column="54" selection-end-line="149" selection-end-column="54" />
+            <state relative-caret-position="3252">
+              <caret line="219" column="32" lean-forward="false" selection-start-line="219" selection-start-column="32" selection-end-line="219" selection-end-column="32" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="models.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/models.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="-589">
+              <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
               <folding>
-                <element signature="e#3187#3502#0" expanded="false" />
-                <element signature="e#3544#4273#0" expanded="false" />
-                <element signature="e#7707#8119#0" expanded="false" />
+                <element signature="e#0#18#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -193,15 +201,21 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/models.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-589">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/nn.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="252">
-          <caret line="149" column="54" lean-forward="true" selection-start-line="149" selection-start-column="54" selection-end-line="149" selection-end-column="54" />
-          <folding>
-            <element signature="e#3187#3502#0" expanded="false" />
-            <element signature="e#3544#4273#0" expanded="false" />
-            <element signature="e#7707#8119#0" expanded="false" />
-          </folding>
+        <state relative-caret-position="3252">
+          <caret line="219" column="32" lean-forward="false" selection-start-line="219" selection-start-column="32" selection-end-line="219" selection-end-column="32" />
+          <folding />
         </state>
       </provider>
     </entry>
